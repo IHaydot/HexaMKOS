@@ -1,0 +1,5 @@
+/target
+.asm
+*.lock
+makefile
+
