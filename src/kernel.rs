@@ -20,29 +20,17 @@ use x86_64::structures::paging::{PageTable, Translate};
 
 //---------------------MODS--------------------------------------------
 
-#[path = "Drivers/Writers/VGA.rs"]
-mod VGA;
-#[path = "IO/IO.rs"]
-mod IO; 
-#[path = "Drivers/Setup/IDT.rs"]
-mod IDT;
-#[path = "Drivers/Setup/GDT.rs"]
-mod GDT;
-#[path = "Drivers/Setup/interrupts.rs"]
-mod interrupts;
-#[path = "Memory/Paging/paging.rs"]
-mod paging;
-
 mod serial;
+
+#[path = "Drivers/vga.rs"]
+mod vga;
+use vga::*;
+
+#[path = "IO/IO.rs"]
+mod IO;
 
 //---------------------CRATE USES--------------------------------------
 
-#[allow(dead_code)]
-#[allow(unused_imports)]
-use crate::VGA::{Colors, cls, CreateColor, SetCursorPos, SetCursorPosFromWH, SetVGAColor, current_color, default_color};
-use crate::IDT::init_idt;
-use crate::GDT::GDT_init;
-use crate::interrupts::PICS;
 
 //--------------------VARIABLES--------------------------------------------
 
@@ -60,46 +48,8 @@ entry_point!(kernel_start);
 
 fn kernel_start(bootinfo: &'static BootInfo) -> ! {
     
-    SetCursorPos(0);
-    cls(CreateColor(Colors::White, Colors::Black));
+    println!("Hello {} world", 2);
     
-    SetVGAColor(CreateColor(Colors::Brown, Colors::DarkGray));
-    println!("different colored text");
-    SetVGAColor(default_color);
-
-    init_idt();
-
-    GDT_init();
-
-    unsafe{PICS.lock().initialize();}
-
-    x86_64::instructions::interrupts::enable();
-    
-    //int3(); //breakpoint
-    
-    /*let dead_mem: *mut u64 = 0xdeadbeef as *mut u64;
-    unsafe{*dead_mem = 9;} //0x2093b1*/
-
-    
-    let phys_offset = VirtAddr::new(bootinfo.physical_memory_offset);
-
-    let mapper = unsafe{paging::Offset_page_table_init(phys_offset)};
-
-    let adresses = [
-        0xb8000, 0x201008, 0x0100_0020_1a10, bootinfo.physical_memory_offset,
-    ];
-
-    for &addr in &adresses {
-        let virt_addr = VirtAddr::new(addr);
-        let phys_addr = mapper.translate_addr(virt_addr);
-        println!("Virtual adress:{:?} to physical adress: {:?}", virt_addr, phys_addr);
-    }
-    
-    #[cfg(test)]
-    test_main();
-
-    println!("I survived?");
-
     hlt();
 }
 
@@ -129,9 +79,9 @@ fn test_runner(tests: &[&dyn Testable]) {
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> !{
     //cls(CreateColor(Colors::Black, Colors::Red));
-    SetVGAColor(CreateColor(Colors::Red, Colors::Black));
-    println!("");
-    println!("RenseOS kernel panicked for some reason, here is the panic info:\n{}", _info);
+    //SetVGAColor(CreateColor(Colors::Red, Colors::Black));
+    //println!("");
+    //println!("RenseOS kernel panicked for some reason, here is the panic info:\n{}", _info);
     hlt();
 }
 
